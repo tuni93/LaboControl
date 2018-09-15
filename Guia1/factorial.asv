@@ -1,0 +1,14 @@
+fumction [sys,x0,str,ts]=factorial(t,x,u,flag)
+
+switch flag
+    
+    case 0
+        size=simsizes;
+        sizes.NumContStates  = 0;
+    sizes.NumDiscStates  = 0;   
+sizes.NumOutputs     = 0;
+sizes.NumInputs      = 0;
+sizes.DirFeedthrough = 1;
+sizes.NumSampleTimes = 1; 
+
+        
