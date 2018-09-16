@@ -191,6 +191,11 @@ ts  = [0 0];
 %=============================================================================
 %
 function sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini)
+   if(x>=hmax)
+       x=hmax;
+   elseif(x<0)	%Asumo que no importa a priori la altura de los drenajes con respecto al nivel del tanque.
+       x=0;
+	end
    Caudal_salida=(1/R)*sqrt(abs(x(1)-u(1)))*sign(x(1)-u(1));
    sys(1)=(u(1)-Caudal_salida)/A;
 %end mdlDerivatives
@@ -220,13 +225,14 @@ function sys=mdlOutputs(t,x,u,flag,R,hmax,A,hini)
 % H0=u(1);
 % Qi=u(0);
 %Mi salida es el nivel del tanque y el caudal de salida Q0
-	sys(1)=x;
-	if(x>=hmax)
-        sys(1)=hmax;
-    elseif(x<0)	%Asumo que no importa a priori la altura de los drenajes con respecto al nivel del tanque.
-        sys(1)=0;
-	end
+	%sys(1)=x;
+	%if(x>=hmax)
+     %   sys(1)=hmax;
+    %elseif(x<0)	%Asumo que no importa a priori la altura de los drenajes con respecto al nivel del tanque.
+     %   sys(1)=0;
+	%end
 	
+	sys(1)=x(1);
 	Caudal_salida=(1/R)*sqrt(abs(x(1)-u(1)))*sign(x(1)-u(1));
 	sys(2)=Caudal_salida;%+Caudal_salida;%Actualizo el caudal de salida, si actualizo primero el caudal puedo tener alturas mayores al maximo y estaria mal
 
