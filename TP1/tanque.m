@@ -191,13 +191,14 @@ ts  = [0 0];
 %=============================================================================
 %
 function sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini)
-   if(x>=hmax)
-       x=hmax;   
-   elseif(x<=u(2))	%Asumo que no importa a priori la altura de los drenajes con respecto al nivel del tanque.
-       x=u(2);
-   end
    Caudal_salida=(1/R)*sqrt(abs(x-u(2)))*sign(x-u(2));
-   sys(1)=(u(1)-Caudal_salida)/A;
+   if(x>=hmax && u(1)>Caudal_salida)
+       sys(1)=0;   
+   elseif(x<=u(2) && u(1)<Caudal_salida)
+       sys(1)=0;
+   else
+     sys(1)=(u(1)-Caudal_salida)/A;
+   end
 %end mdlDerivatives
 
 %
@@ -264,5 +265,3 @@ function sys=mdlTerminate(t,x,u)
 sys = [];
 
 % end mdlTerminate
-
-        
