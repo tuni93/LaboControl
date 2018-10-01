@@ -1,12 +1,24 @@
-clear all
-clc
-close all
+close all;
 %% Generacion de la señal aleatoria para la identificacion
-N=100;%Nro de puntos
-Ts=0.001;
-T_total=(N-1)*Ts;
-signal(:,2)=idinput(N,'prbs');
-aux=0:Ts:T_total;
-aux=aux';
-signal(:,1)=aux;
-plot(signal(:,1),signal(:,2))
+figure(1)
+plot(datos.Time,datos.Data(:,1));
+figure(2)
+plot(datos.Time,datos.Data(:,2),'r');
+
+y=datos.Data(:,2);
+u=datos.Data(:,1);
+TimeVector=datos.Time;
+
+
+data = iddata(y,u,[],'SamplingInstants',TimeVector)
+
+	na=0;
+	nb=2;
+	nk=1;
+
+sistema_estimado = arx(data,[na nb nk])
+
+[Numerador Denominador] = polydata(sistema_estimado);
+sys = tf(Numerador,Denominador)
+
+	

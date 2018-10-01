@@ -1,4 +1,4 @@
-function [sys,x0,str,ts] = tanque(t,x,u,flag,R,hmax,A,hini)
+function [sys,x0,str,ts] = mysigno(t,x,u,flag)
 %SFUNTMPL General M-file S-function template
 %   With M-file S-functions, you can define you own ordinary differential
 %   equations (ODEs), discrete system equations, and/or just about
@@ -92,31 +92,32 @@ function [sys,x0,str,ts] = tanque(t,x,u,flag,R,hmax,A,hini)
 %
 % The following outlines the general structure of an S-function.
 %
+
 switch flag,
 
   %%%%%%%%%%%%%%%%%%
   % Initialization %
   %%%%%%%%%%%%%%%%%%
   case 0,
-    [sys,x0,str,ts]=mdlInitializeSizes(t,x,u,flag,R,hmax,A,hini);
+    [sys,x0,str,ts]=mdlInitializeSizes;
 
   %%%%%%%%%%%%%%%
   % Derivatives %
   %%%%%%%%%%%%%%%
   case 1,
-    sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini);%Est continuos
+    sys=mdlDerivatives(t,x,u);
 
   %%%%%%%%%%
   % Update %
   %%%%%%%%%%
   case 2,
-    sys=mdlUpdate(t,x,u);%Ecuacion en diferencias
+    sys=mdlUpdate(t,x,u);
 
   %%%%%%%%%%%
   % Outputs %
   %%%%%%%%%%%
   case 3,
-    sys=mdlOutputs(t,x,u,flag,R,hmax,A,hini);
+	sys=mdlOutputs(t,x,u);
 
   %%%%%%%%%%%%%%%%%%%%%%%
   % GetTimeOfNextVarHit %
@@ -146,7 +147,7 @@ end
 % Return the sizes, initial conditions, and sample times for the S-function.
 %=============================================================================
 %
-function [sys,x0,str,ts]=mdlInitializeSizes(ht,x,u,flag,R,hmax,A,hini)
+function [sys,x0,str,ts]=mdlInitializeSizes
 
 %
 % call simsizes for a sizes structure, fill it in and convert it to a
@@ -158,10 +159,10 @@ function [sys,x0,str,ts]=mdlInitializeSizes(ht,x,u,flag,R,hmax,A,hini)
 %
 sizes = simsizes;
 
-sizes.NumContStates  = 1;
+sizes.NumContStates  = 0;
 sizes.NumDiscStates  = 0;
-sizes.NumOutputs     = 2;
-sizes.NumInputs      = 2;
+sizes.NumOutputs     = 1;
+sizes.NumInputs      = 1;
 sizes.DirFeedthrough = 1;
 sizes.NumSampleTimes = 1;   % at least one sample time is needed
 
@@ -170,7 +171,7 @@ sys = simsizes(sizes);
 %
 % initialize the initial conditions
 %
-x0  = [hini];
+x0  = [];
 
 %
 % str is always an empty matrix
@@ -190,19 +191,11 @@ ts  = [0 0];
 % Return the derivatives for the continuous states.
 %=============================================================================
 %
-function sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini)
-   Caudal_salida=(1/R)*sqrt(abs(x-u(2)))*sign(x-u(2));
-   Caudal_entrada=u(1);
-   Caudal_total=Caudal_entrada-Caudal_salida;
-   Nivel_salida=u(2);
-   if(x>=hmax && Caudal_total>=0)
-       sys(1)=0;   
-   elseif(x<=Nivel_salida && Caudal_total<=0)
-       sys(1)=0;
-   else
-     sys(1)=(Caudal_total)/A;
-   end
-%end mdlDerivatives
+function sys=mdlDerivatives(t,x,u)
+
+sys = [];
+
+% end mdlDerivatives
 
 %
 %=============================================================================
@@ -223,23 +216,14 @@ sys = [];
 % Return the block outputs.
 %=============================================================================
 %
-function sys=mdlOutputs(t,x,u,flag,R,hmax,A,hini)
-Nivel_salida=u(2);
-Caudal_salida=(1/R)*sqrt(abs(x-u(2)))*sign(x-u(2));
-Caudal_entrada=u(1);
-Caudal_total=Caudal_entrada-Caudal_salida;
-Nivel_minimo=0;
-	sys(1)=x;	
-	if(x>=hmax) 
-        sys(1)=hmax;
-    elseif(x<=Nivel_minimo) 	%Asumo que no importa a priori la altura de los drenajes con respecto al nivel del tanque.
-        sys(1)=Nivel_minimo; 	
+function sys=mdlOutputs(t,x,u)
+
+	if(u>=0)
+		sys =1;
+	else
+		sys=-1;
 	end
-	Caudal_salida=(1/R)*sqrt(abs(sys(1)-Nivel_salida))*sign(sys(1)-Nivel_salida);
-	sys(2)=Caudal_salida;%+Caudal_salida;%Actualizo el caudal de salida, si actualizo primero el caudal puedo tener alturas mayores al maximo y estaria mal
-
-
-%end mdlOutputs
+% end mdlOutputs
 
 %
 %=============================================================================
@@ -252,7 +236,7 @@ Nivel_minimo=0;
 %
 function sys=mdlGetTimeOfNextVarHit(t,x,u)
 
-sampleTime = 0.001;    %  Example, set the next hit to be one second later.
+sampleTime = 0.0001;    %  Example, set the next hit to be one second later.
 sys = t + sampleTime;
 
 % end mdlGetTimeOfNextVarHit
