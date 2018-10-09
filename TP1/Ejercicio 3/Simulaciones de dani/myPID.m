@@ -1,4 +1,16 @@
-function [sys,x0,str,ts] = tanque(t,x,u,flag,R,hmax,A,hini)
+function [sys,x0,str,ts]=myPID(t,x,u,flag,Kp,Kd,Ki,N,Ts,lowU,highU)
+%% Valores por defecto
+if nargin==9,
+    lowU=-1E20;highU=1E20; %Saturaciones por defecto
+end
+
+    %%
+% Kp=constante proporcional
+% Kd=constante derivativa
+% Ki=constante integrativa
+% N =Orden del filtro derivativo
+% Ts =tiempo de muestreo
+
 %SFUNTMPL General M-file S-function template
 %   With M-file S-functions, you can define you own ordinary differential
 %   equations (ODEs), discrete system equations, and/or just about
@@ -98,31 +110,31 @@ switch flag,
   % Initialization %
   %%%%%%%%%%%%%%%%%%
   case 0,
-    [sys,x0,str,ts]=mdlInitializeSizes(t,x,u,flag,R,hmax,A,hini);
+    [sys,x0,str,ts]=mdlInitializeSizes(Ts);
 
   %%%%%%%%%%%%%%%
   % Derivatives %
   %%%%%%%%%%%%%%%
   case 1,
-    sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini);%Est continuos
+    sys=mdlDerivatives(t,x,u);
 
   %%%%%%%%%%
   % Update %
   %%%%%%%%%%
   case 2,
-    sys=mdlUpdate(t,x,u);%Ecuacion en diferencias
+    sys=mdlUpdate(t,x,u,Kp,Kd,Ki,N,Ts,lowU,highU);
 
   %%%%%%%%%%%
   % Outputs %
   %%%%%%%%%%%
   case 3,
-    sys=mdlOutputs(t,x,u,flag,R,hmax,A,hini);
+    sys=mdlOutputs(t,x,u,Kp,Kd,Ki,N,Ts,lowU,highU);
 
   %%%%%%%%%%%%%%%%%%%%%%%
   % GetTimeOfNextVarHit %
   %%%%%%%%%%%%%%%%%%%%%%%
   case 4,
-    sys=mdlGetTimeOfNextVarHit(t,x,u);
+    sys=mdlGetTimeOfNextVarHit(t,x,u,Ts);
 
   %%%%%%%%%%%%%
   % Terminate %
@@ -146,7 +158,7 @@ end
 % Return the sizes, initial conditions, and sample times for the S-function.
 %=============================================================================
 %
-function [sys,x0,str,ts]=mdlInitializeSizes(ht,x,u,flag,R,hmax,A,hini)
+function [sys,x0,str,ts]=mdlInitializeSizes(Ts)
 
 %
 % call simsizes for a sizes structure, fill it in and convert it to a
@@ -158,9 +170,9 @@ function [sys,x0,str,ts]=mdlInitializeSizes(ht,x,u,flag,R,hmax,A,hini)
 %
 sizes = simsizes;
 
-sizes.NumContStates  = 1;
-sizes.NumDiscStates  = 0;
-sizes.NumOutputs     = 2;
+sizes.NumContStates  = 0;
+sizes.NumDiscStates  = 2;
+sizes.NumOutputs     = 1;
 sizes.NumInputs      = 2;
 sizes.DirFeedthrough = 1;
 sizes.NumSampleTimes = 1;   % at least one sample time is needed
@@ -170,7 +182,7 @@ sys = simsizes(sizes);
 %
 % initialize the initial conditions
 %
-x0  = [hini];
+x0  = [0 0];
 
 %
 % str is always an empty matrix
@@ -180,7 +192,7 @@ str = [];
 %
 % initialize the array of sample times
 %
-ts  = [0 0];
+ts  = [Ts 0];
 
 % end mdlInitializeSizes
 
@@ -190,32 +202,11 @@ ts  = [0 0];
 % Return the derivatives for the continuous states.
 %=============================================================================
 %
-function sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini)
-	%x es el nivel del liquido actual
-	
-   Nivel_minimo=0;
-   Nivel_actual=x;
-   
-   %Si satura por arriba o por debajo, limito.
-   if(x>=hmax)			
-		Nivel_actual=hmax;
-   elseif(x<=Nivel_minimo)
-		Nivel_actual=Nivel_minimo;
-   end
-   
-   Caudal_entrada=u(1);
-   Caudal_salida=(1/R)*sqrt(abs(Nivel_actual-u(2)))*sign(Nivel_actual-u(2));
-   Caudal_acum=Caudal_entrada-Caudal_salida;
-   Nivel_salida=u(2);
-   
-   if(x>=hmax && Caudal_acum>=0)
-       sys(1)=0;   
-   elseif(x<=Nivel_minimo && Caudal_acum<=0)
-       sys(1)=0;
-   else
-     sys(1)=(Caudal_acum)/A;
-   end
-%end mdlDerivatives
+function sys=mdlDerivatives(t,x,u)
+
+sys = [];
+
+% end mdlDerivatives
 
 %
 %=============================================================================
@@ -224,10 +215,48 @@ function sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini)
 % requirements.
 %=============================================================================
 %
-function sys=mdlUpdate(t,x,u)
+function sys=mdlUpdate(t,x,u,Kp,Kd,Ki,N,Ts,lowU,highU)
+%Recibe
+%   x(1)=Ik    x(2)=D'k    u(1)=rk      u(2)=yk
+%Devuelve
+%   x(1)=Ik+1     x(2)=D'k+1
+    gamma=Kd/N;
+        
+    %
+    %D_k=gamma/gamma+h·D_{k-1} - KpKd/gamma+h (yk-y_{k-1})
+    %D_k=gamma/gamma+h·D_{k-1} + KpKd/gamma+h·y_{k-1} - KpKd/gamma+h·yk
+    %
+    % Separo
+    % D_k       =  D'_k + D''_k
+    % D'_k      =  gamma/gamma+h·D_{k-1} +KpKd/gamma+h·y_{k-1}
+    % D'_k+1    =  gamma/gamma+h·D_k +KpKd/gamma+h·y_k
+    % D''_k     = -KpKd/gamma+h·yk
+    %
+    % Dk:
+        Dpp_k = -Kp*Kd/(gamma+Ts)*u(2);
+    Dk = x(2)+Dpp_k;
+    % D'k+1:
+    sys(2)=gamma/(gamma+Ts) *Dk + Kp*Kd/(gamma+Ts)*u(2) ;
 
-sys = [];
-
+    %
+    %  Ik=KpKiTs+\sum_{j=0}^{k-1} e_j
+    %· Ik+1=Ik + KpKiTs e_k
+    %
+    sys(1)=x(1)+Kp*Ki*Ts*(u(1)-u(2));
+    
+    %%AntiWindUp
+    % Resuelto sin variables globales
+    %
+    % Si satura, que no actualice Ik.
+    % Para ello tengo que saber la salida del pid
+    Pk   = Kp*(u(1)-u(2));
+    Ik   = x(1);
+    Dk   = x(2)-Kp*Kd/(gamma+Ts)*u(2);
+    yk  = Ik + Dk + Pk ;
+    if yk>=highU || yk<=lowU,  %si satura,
+        sys(1)=x(1);            % que no acumule error
+    end
+    
 % end mdlUpdate
 
 %
@@ -236,19 +265,33 @@ sys = [];
 % Return the block outputs.
 %=============================================================================
 %
-function sys=mdlOutputs(t,x,u,flag,R,hmax,A,hini)
-Nivel_salida=u(2); %del tanque vecino
-Nivel_minimo=0;
-	sys(1)=x;
-	if(x>=hmax) 
-        sys(1)=hmax;
-    elseif(x<=Nivel_minimo) 	
-        sys(1)=Nivel_minimo; 	
-	end
-Caudal_salida=(1/R)*sqrt(abs(sys(1)-Nivel_salida))*sign(sys(1)-Nivel_salida);
-sys(2)=Caudal_salida;
+function sys=mdlOutputs(t,x,u,Kp,Kd,Ki,N,Ts,lowU,highU)
+%Recive
+%   x(1)=I_k    x(2)=D'_k    u(1)=rk      u(2)=yk
 
-%end mdlOutputs
+   gamma=Kd/N; 
+   % factor proporcional
+    Pk   = Kp*(u(1)-u(2));
+    
+   %calculo Ik
+    Ik   = x(1); 
+    
+   % Calculo factor derivativo
+   % D_k  =  D'_k + D''_k
+   %
+     Dpp_k = -Kp*Kd/(gamma+Ts)*u(2);
+    Dk   = x(2) + Dpp_k;
+
+   % Emito la salida
+    sys  = Ik + Dk + Pk ;
+    
+    if sys>=highU, % Si satura, que no saque la salida
+        sys=highU
+    elseif sys<=lowU,
+        sys=lowU
+    end
+
+% end mdlOutputs
 
 %
 %=============================================================================
@@ -259,9 +302,9 @@ sys(2)=Caudal_salida;
 % mdlInitializeSizes.
 %=============================================================================
 %
-function sys=mdlGetTimeOfNextVarHit(t,x,u)
+function sys=mdlGetTimeOfNextVarHit(t,x,u,Ts)
 
-sampleTime = 0.001;    %  Example, set the next hit to be one second later.
+sampleTime = Ts;    %  Example, set the next hit to be one second later.
 sys = t + sampleTime;
 
 % end mdlGetTimeOfNextVarHit
@@ -277,3 +320,5 @@ function sys=mdlTerminate(t,x,u)
 sys = [];
 
 % end mdlTerminate
+
+        

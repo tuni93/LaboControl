@@ -1,4 +1,4 @@
-function [sys,x0,str,ts] = tanque(t,x,u,flag,R,hmax,A,hini)
+function [sys,x0,str,ts] = encoder(t,x,u,flag,Ts,encoder_ppv)
 %SFUNTMPL General M-file S-function template
 %   With M-file S-functions, you can define you own ordinary differential
 %   equations (ODEs), discrete system equations, and/or just about
@@ -98,25 +98,25 @@ switch flag,
   % Initialization %
   %%%%%%%%%%%%%%%%%%
   case 0,
-    [sys,x0,str,ts]=mdlInitializeSizes(t,x,u,flag,R,hmax,A,hini);
+    [sys,x0,str,ts]=mdlInitializeSizes(Ts);
 
   %%%%%%%%%%%%%%%
   % Derivatives %
   %%%%%%%%%%%%%%%
   case 1,
-    sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini);%Est continuos
+    sys=mdlDerivatives(t,x,u);
 
   %%%%%%%%%%
   % Update %
   %%%%%%%%%%
   case 2,
-    sys=mdlUpdate(t,x,u);%Ecuacion en diferencias
+    sys=mdlUpdate(t,x,u,Ts);
 
   %%%%%%%%%%%
   % Outputs %
   %%%%%%%%%%%
   case 3,
-    sys=mdlOutputs(t,x,u,flag,R,hmax,A,hini);
+    sys=mdlOutputs(t,x,u,encoder_ppv);
 
   %%%%%%%%%%%%%%%%%%%%%%%
   % GetTimeOfNextVarHit %
@@ -146,7 +146,7 @@ end
 % Return the sizes, initial conditions, and sample times for the S-function.
 %=============================================================================
 %
-function [sys,x0,str,ts]=mdlInitializeSizes(ht,x,u,flag,R,hmax,A,hini)
+function [sys,x0,str,ts]=mdlInitializeSizes(Ts)
 
 %
 % call simsizes for a sizes structure, fill it in and convert it to a
@@ -158,11 +158,11 @@ function [sys,x0,str,ts]=mdlInitializeSizes(ht,x,u,flag,R,hmax,A,hini)
 %
 sizes = simsizes;
 
-sizes.NumContStates  = 1;
-sizes.NumDiscStates  = 0;
-sizes.NumOutputs     = 2;
+sizes.NumContStates  = 0;
+sizes.NumDiscStates  = 3;
+sizes.NumOutputs     = 1;
 sizes.NumInputs      = 2;
-sizes.DirFeedthrough = 1;
+sizes.DirFeedthrough = 0;
 sizes.NumSampleTimes = 1;   % at least one sample time is needed
 
 sys = simsizes(sizes);
@@ -170,7 +170,7 @@ sys = simsizes(sizes);
 %
 % initialize the initial conditions
 %
-x0  = [hini];
+x0  = [0 0 0];
 
 %
 % str is always an empty matrix
@@ -180,7 +180,7 @@ str = [];
 %
 % initialize the array of sample times
 %
-ts  = [0 0];
+ts  = [Ts 0];
 
 % end mdlInitializeSizes
 
@@ -190,32 +190,10 @@ ts  = [0 0];
 % Return the derivatives for the continuous states.
 %=============================================================================
 %
-function sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini)
-	%x es el nivel del liquido actual
-	
-   Nivel_minimo=0;
-   Nivel_actual=x;
-   
-   %Si satura por arriba o por debajo, limito.
-   if(x>=hmax)			
-		Nivel_actual=hmax;
-   elseif(x<=Nivel_minimo)
-		Nivel_actual=Nivel_minimo;
-   end
-   
-   Caudal_entrada=u(1);
-   Caudal_salida=(1/R)*sqrt(abs(Nivel_actual-u(2)))*sign(Nivel_actual-u(2));
-   Caudal_acum=Caudal_entrada-Caudal_salida;
-   Nivel_salida=u(2);
-   
-   if(x>=hmax && Caudal_acum>=0)
-       sys(1)=0;   
-   elseif(x<=Nivel_minimo && Caudal_acum<=0)
-       sys(1)=0;
-   else
-     sys(1)=(Caudal_acum)/A;
-   end
-%end mdlDerivatives
+function sys=mdlDerivatives(t,x,u)
+
+sys=[]
+% end mdlDerivatives
 
 %
 %=============================================================================
@@ -224,11 +202,58 @@ function sys=mdlDerivatives(t,x,u,flag,R,hmax,A,hini)
 % requirements.
 %=============================================================================
 %
-function sys=mdlUpdate(t,x,u)
+function sys=mdlUpdate(t,x,u,Ts)
+%x(1)= Tacum de un pulso
+%x(2)= Dt Velocidad actual
+%x(3)= u(1)[n-1]
+%x(4)= u(2)[n-1] %No implementado
+%
+%u(1)=Va
+%u(2)=Vb
+%
+% Parametros del motor
+ThLow=0.2;  %Umbral 'Threshold'
+ThHigh=0.8;
+Tmax=1;    %si el motor esta frenado por mas de 10 seg, no se calcule su velocidad
+%·········································
 
-sys = [];
+%Calculo el flanco
+    Uant=x(3);
+    Uact=1*(u(1)>=ThHigh)+0*(u(1)<=ThLow)+Uant*(ThLow<u(1)&&u(1)<ThHigh);
+        %Llevo u ->valores {0,1} binario, 
+        %Uactual, 1: 1V, 0: 0V, indeterminado:->estado anterior
+    sys(3)=u(1); %Guardo Uact
 
-% end mdlUpdate
+flanco=Uact-Uant; %flanco = u[n]-u[n-1]
+%       positivo: +1 negativo: -1 constante: 0
+
+switch flanco,
+    case 1, %flanco positivo
+        sys(1)=Ts;      %Reseteo contador
+                        %dt= tiempo entre llamadas consecutivas    
+        sys(2)=x(2);
+    case -1, %flanco negativo
+        sys(1)=0;       %Reseteo contador
+        %Guardo intervalo actual, pero
+        %Chequeo la direccion 
+            if u(2)>=ThHigh,    
+                sys(2)=-x(1);    %Va->Vb
+            else 
+                sys(2)=x(1);
+            end
+    case 0,  %sin flanco
+        sys(1)=x(1)+Ts;
+        sys(2)=x(2); %hasta que no se actualice, la velocidad coincide con la anterior
+end
+
+%·Ademas, si el motor esta apagado, la velocidad es cero
+if sys(1)>=Tmax, %Tiempo acumulado
+    sys(1)=Tmax;    %Que no desborde x(1)
+    sys(2)=0;       %convengo DeltaT=0, para decir vel=0
+end
+
+
+    % end mdlUpdate
 
 %
 %=============================================================================
@@ -236,19 +261,21 @@ sys = [];
 % Return the block outputs.
 %=============================================================================
 %
-function sys=mdlOutputs(t,x,u,flag,R,hmax,A,hini)
-Nivel_salida=u(2); %del tanque vecino
-Nivel_minimo=0;
-	sys(1)=x;
-	if(x>=hmax) 
-        sys(1)=hmax;
-    elseif(x<=Nivel_minimo) 	
-        sys(1)=Nivel_minimo; 	
-	end
-Caudal_salida=(1/R)*sqrt(abs(sys(1)-Nivel_salida))*sign(sys(1)-Nivel_salida);
-sys(2)=Caudal_salida;
+function sys=mdlOutputs(t,x,u,encoder_ppv)
+%x(1)=Tacum de un pulso
+%x(2)=Delta T
+%x(3,4)=Va[n-1],Vb[n-1]
+%
+% Defino Sentido horario como frecuencia positiva
+%················································
 
-%end mdlOutputs
+    %w=2pi/Dt; f=1/Dt
+    if x(2)==0,
+        sys=0;  %Habia convenido que si Dt=0, Vel=0
+    else
+        sys = 1/(2*x(2)*encoder_ppv);%frec, divido por 2 ya que conte solo Ton
+    end
+% end mdlOutputs
 
 %
 %=============================================================================
@@ -261,7 +288,7 @@ sys(2)=Caudal_salida;
 %
 function sys=mdlGetTimeOfNextVarHit(t,x,u)
 
-sampleTime = 0.001;    %  Example, set the next hit to be one second later.
+sampleTime = 1;    %  Example, set the next hit to be one second later.
 sys = t + sampleTime;
 
 % end mdlGetTimeOfNextVarHit

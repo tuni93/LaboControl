@@ -7,7 +7,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.9"
+    ComputedModelVersion    "1.10"
     NumModelReferences	    0
     NumTestPointedSignals   0
   }
@@ -76,9 +76,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "nico"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Tue Sep 25 22:31:02 2018"
-  RTWModifiedTimeStamp	  459815388
-  ModelVersionFormat	  "1.%<AutoIncrement:9>"
+  LastModifiedDate	  "Sun Oct 07 16:07:46 2018"
+  RTWModifiedTimeStamp	  460829247
+  ModelVersionFormat	  "1.%<AutoIncrement:10>"
   ConfigurationManager	  "none"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -994,20 +994,20 @@ Model {
       ScopeSpecificationString "Simulink.scopes.TimeScopeBlockCfg('CurrentConfiguration', extmgr.ConfigurationSet(extm"
       "gr.Configuration('Core','General UI',true),extmgr.Configuration('Core','Source UI',true),extmgr.Configuration('S"
       "ources','WiredSimulink',true,'DataLoggingVariableName','ScopeData2'),extmgr.Configuration('Visuals','Time Domain"
-      "',true,'SerializedDisplays',{struct('MinYLimReal','-1.625','MaxYLimReal','14.625','YLabelReal','','MinYLimMag','"
-      "0.00000','MaxYLimMag','14.625','LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'AxesColo"
-      "r',[0 0 0],'AxesTickColor',[0.686274509803922 0.686274509803922 0.686274509803922],'ColorOrder',[1 1 0.066666666"
-      "6666667;0.0745098039215686 0.623529411764706 1;1 0.411764705882353 0.16078431372549;0.392156862745098 0.83137254"
-      "9019608 0.0745098039215686;0.717647058823529 0.274509803921569 1;0.0588235294117647 1 1;1 0.0745098039215686 0.6"
-      "50980392156863],'Title','%<SignalLabel>','LinePropertiesCache',{{}},'UserDefinedChannelNames',{{}},'NumLines',1,"
-      "'LineNames',{{'Transport Delay'}},'ShowContent',true,'Placement',1)},'DisplayPropertyDefaults',struct('MinYLimRe"
-      "al','-1.625','MaxYLimReal','14.625','YLabelReal','','MinYLimMag','0.00000','MaxYLimMag','14.625','LegendVisibili"
-      "ty','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'AxesColor',[0 0 0],'AxesTickColor',[0.686274509803922 "
-      "0.686274509803922 0.686274509803922],'ColorOrder',[0.0745098039215686 0.623529411764706 1;1 0.411764705882353 0."
-      "16078431372549;1 1 0.0666666666666667;0.717647058823529 0.274509803921569 1;0.392156862745098 0.831372549019608 "
-      "0.0745098039215686;0.0588235294117647 1 1;1 0.0745098039215686 0.650980392156863])),extmgr.Configuration('Tools'"
-      ",'Plot Navigation',true,'PreviousAutoscale','XY'),extmgr.Configuration('Tools','Measurements',true,'Version','20"
-      "15b')),'Version','2015b','Position',[638 109 560 420],'VisibleAtModelOpen','on')"
+      "',true,'SerializedDisplays',{struct('MinYLimReal','10.51176','MaxYLimReal','13.11226','YLabelReal','','MinYLimMa"
+      "g','10.51176','MaxYLimMag','13.11226','LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'A"
+      "xesColor',[0 0 0],'AxesTickColor',[0.686274509803922 0.686274509803922 0.686274509803922],'ColorOrder',[1 1 0.06"
+      "66666666666667;0.0745098039215686 0.623529411764706 1;1 0.411764705882353 0.16078431372549;0.392156862745098 0.8"
+      "31372549019608 0.0745098039215686;0.717647058823529 0.274509803921569 1;0.0588235294117647 1 1;1 0.0745098039215"
+      "686 0.650980392156863],'Title','%<SignalLabel>','LinePropertiesCache',{{}},'UserDefinedChannelNames',{{}},'NumLi"
+      "nes',1,'LineNames',{{'Transport Delay'}},'ShowContent',true,'Placement',1)},'DisplayPropertyDefaults',struct('Mi"
+      "nYLimReal','10.51176','MaxYLimReal','13.11226','YLabelReal','','MinYLimMag','10.51176','MaxYLimMag','13.11226','"
+      "LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'AxesColor',[0 0 0],'AxesTickColor',[0.68"
+      "6274509803922 0.686274509803922 0.686274509803922],'ColorOrder',[0.0745098039215686 0.623529411764706 1;1 0.4117"
+      "64705882353 0.16078431372549;1 1 0.0666666666666667;0.717647058823529 0.274509803921569 1;0.392156862745098 0.83"
+      "1372549019608 0.0745098039215686;0.0588235294117647 1 1;1 0.0745098039215686 0.650980392156863])),extmgr.Configu"
+      "ration('Tools','Plot Navigation',true,'PreviousAutoscale','XY','OnceAtStop',false),extmgr.Configuration('Tools',"
+      "'Measurements',true,'Version','2015b')),'Version','2015b','Position',[638 109 560 420])"
     }
     Block {
       BlockType		      Sum
