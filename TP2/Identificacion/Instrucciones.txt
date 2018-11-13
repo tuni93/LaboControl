@@ -1,0 +1,16 @@
+Hola Dani como va?, bueno ya que abriste este rar te comento lo que contiene
+
+En el rar vas a encontrar relaciones de señales de entrada y salida a lazo cerrado 
+como se pide en el tp (Estan bastante bien dentro de todo)
+Encontras tmb a lazo abierto una mediciones donde pasa de 105 de PWM a 230 RPM masomenos
+En donde hice la identificacion, quedo bastante fea por la cantidad de puntos que le manda el 
+arduino a la pc pero para safar mañana esta. 
+
+Ahi en una foto tenes los valores del numerador y denominador de la planata estimada, podes usarla para
+aplicar el pid como pide, es lo unico que falta, no lo hago porque palmo en breve.
+
+
+
+
+Estoy re muerto rendi hace un rato y mañana rindo esto y economia a las 7, dudo que vaya a la teorica
+Saludos

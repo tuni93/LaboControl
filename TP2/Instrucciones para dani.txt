@@ -1,0 +1,7 @@
+Si llegaste a este punto es porque descomprimiste el archivo.
+*La carpeta ComunicacionConlapc tiene scripts para enviar msjs de arduino a la pc y verificar que funcione
+*La carpeta comunicacionconlapcvuelta envia de la pc y recibe en la pc.
+*La carpeta Medicion de velocidad simplemente mide la velocidad donde corregi el bug de la vez pasada
+*La carpeta PIDa8khz tiene el PID
+*La carpeta PIDconcomunicacion es la que integra todo el tp, mide recibe emite y actua, hace todo es la que use para hacer el video.
+BUE SI LLEGASTE HASTA ACA Y NO ENTENDISTE ALGO PREGUNTAME.
